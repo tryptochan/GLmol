@@ -1752,7 +1752,11 @@ GLmol.prototype.enableMouse = function() {
          if (r2 < nearest[0]) nearest = [r2, atom, v];
       }
       var atom = nearest[1]; if (atom == undefined) return;
-      var bb = me.billboard(me.createTextTex(atom.chain + ":" + atom.resn + ":" + atom.resi + ":" + atom.atom, "30", "#ffffff"));
+      // http://www.w3.org/WAI/ER/WD-AERT/#color-contrast
+      var color = ((me.bgColor >> 16 & 255) * 0.299 +
+                  (me.bgColor >> 8 & 255) * 0.587 + 
+                  (me.bgColor & 255) * 0.114) < 125 ? '#ffffff' : '#000000';
+      var bb = me.billboard(me.createTextTex(atom.chain + ":" + atom.resn + ":" + atom.resi + ":" + atom.atom, "30", color));
       bb.position.set(atom.x, atom.y, atom.z);
       me.modelGroup.add(bb);
       me.show();
