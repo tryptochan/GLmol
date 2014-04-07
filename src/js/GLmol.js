@@ -1738,7 +1738,7 @@ GLmol.prototype.enableMouse = function() {
       var pmvMat = new THREE.Matrix4().multiplyMatrices(me.camera.projectionMatrix, mvMat);
       //var pmvMatInv = new THREE.Matrix4().getInverse(pmvMat);
       var tx = x / me.WIDTH * 2 - 1, ty = 1 - y / me.HEIGHT * 2;
-      var nearest = [1, {}, new TV3(0, 0, 1000)];
+      var nearest = [1, null, new TV3(0, 0, 1000)];
       for (var i = 0, ilim = me.atoms.length; i < ilim; i++) {
          var atom = me.atoms[i]; if (atom == undefined) continue;
          if (atom.resn == "HOH") continue;
@@ -1751,7 +1751,8 @@ GLmol.prototype.enableMouse = function() {
          if (r2 > 0.0002) continue;
          if (r2 < nearest[0]) nearest = [r2, atom, v];
       }
-      var atom = nearest[1]; if (atom == undefined) return;
+      var atom = nearest[1];
+      if (atom === null) return;
       // http://www.w3.org/WAI/ER/WD-AERT/#color-contrast
       var color = ((me.bgColor >> 16 & 255) * 0.299 +
                   (me.bgColor >> 8 & 255) * 0.587 + 
