@@ -1500,6 +1500,7 @@ GLmol.prototype.drawSymmetryMatesWithTranslation2 = function(group, asu, matrice
 GLmol.prototype.createTextTex = function(text, size, color) {
    var canvas = document.createElement("canvas");
    canvas.style.backgroundColor = "rgba(0, 0, 0, 0.0)";
+   canvas.style.display = "none";
    var ctx = canvas.getContext("2d");
    ctx.font = size + "px Arial";
    canvas.width = ctx.measureText(text).width;
