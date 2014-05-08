@@ -1732,7 +1732,7 @@ GLmol.prototype.enableMouse = function() {
       var dx = x - me.mouseStartX, dy = y - me.mouseStartY;
       var r = Math.sqrt(dx * dx + dy * dy);      
       if (r > 2) return;
-      x -= me.container.position().left; y -= me.container.position().top;
+      x -= me.container.offset().left; y -= me.container.offset().top;
 
       var mvMat = new THREE.Matrix4().multiplyMatrices(me.camera.matrixWorldInverse, me.modelGroup.matrixWorld);
       var pmvMat = new THREE.Matrix4().multiplyMatrices(me.camera.projectionMatrix, mvMat);
