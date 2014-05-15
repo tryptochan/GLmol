@@ -176,6 +176,7 @@ GLmol.prototype.parseSDF = function(str) {
       atom.atom = atom.elem = line.substr(31, 3).replace(/ /g, "");
       atom.bonds = [];
       atom.bondOrder = [];
+      atom.visible = false;
       atoms[i] = atom;
    }
    for (i = 1; i <= bondCount; i++) {
@@ -217,13 +218,14 @@ GLmol.prototype.parseXYZ = function(str) {
       atom.hetflag = true;
       atom.bonds = [];
       atom.bondOrder = [];
+      atom.visible = false;
       atoms[i] = atom;
    }
    for (var i = 1; i < atomCount; i++) // hopefully XYZ is small enough
       for (var j = i + 1; j <= atomCount; j++)
          if (this.isConnected(atoms[i], atoms[j])) {
-	    atoms[i].bonds.push(j);
-	    atoms[i].bondOrder.push(1);
+          atoms[i].bonds.push(j);
+          atoms[i].bondOrder.push(1);
     	    atoms[j].bonds.push(i);
      	    atoms[j].bondOrder.push(1);
          }
@@ -260,7 +262,7 @@ GLmol.prototype.parsePDB2 = function(str) {
          }
          if (line[0] == 'H') hetflag = true;
          else hetflag = false;
-         atoms[serial] = {'resn': resn, 'x': x, 'y': y, 'z': z, 'elem': elem,
+         atoms[serial] = {'resn': resn, 'x': x, 'y': y, 'z': z, 'elem': elem, 'visible': false,
   'hetflag': hetflag, 'chain': chain, 'resi': resi, 'serial': serial, 'atom': atom,
   'bonds': [], 'ss': 'c', 'color': 0xFFFFFF, 'bonds': [], 'bondOrder': [], 'b': b /*', altLoc': altLoc*/};
       } else if (recordName == 'SHEET ') {
@@ -398,6 +400,7 @@ GLmol.prototype.drawAtomsAsSphere = function(group, atomlist, defaultRadius, for
    for (var i = 0; i < atomlist.length; i++) {
       var atom = this.atoms[atomlist[i]];
       if (atom == undefined) continue;
+      atom.visible = true;
 
       var sphereMaterial = new THREE.MeshLambertMaterial({color: atom.color});
       var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
@@ -417,6 +420,7 @@ GLmol.prototype.drawAtomsAsIcosahedron = function(group, atomlist, defaultRadius
    for (var i = 0; i < atomlist.length; i++) {
       var atom = this.atoms[atomlist[i]];
       if (atom == undefined) continue;
+      atom.visible = true;
 
       var mat = new THREE.MeshLambertMaterial({color: atom.color});
       var sphere = new THREE.Mesh(geo, mat);
@@ -454,6 +458,8 @@ GLmol.prototype.drawBondAsStickSub = function(group, atom1, atom2, bondR, order)
    var p1 = new TV3(atom1.x, atom1.y, atom1.z);
    var p2 = new TV3(atom2.x, atom2.y, atom2.z);
    var mp = p1.clone().add(p2).multiplyScalar(0.5);
+   atom1.visible = true;
+   atom2.visible = true;
 
    var c1 = new TCo(atom1.color), c2 = new TCo(atom2.color);
    if (order == 1 || order == 3) {
@@ -575,6 +581,8 @@ GLmol.prototype.drawBondsAsLineSub = function(geo, atom1, atom2, order) {
    var p2 = new TV3(atom2.x, atom2.y, atom2.z);
    var mp = p1.clone().add(p2).multiplyScalar(0.5);
 
+   atom1.visible = true;
+   atom2.visible = true;
    var c1 = new TCo(atom1.color), c2 = new TCo(atom2.color);
    if (order == 1 || order == 3) {
       vs.push(p1); cs.push(c1); vs.push(mp); cs.push(c1);
@@ -745,6 +753,7 @@ GLmol.prototype.drawMainchainCurve = function(group, atomlist, curveWidth, atomN
       if (atom == undefined) continue;
 
       if ((atom.atom == atomName) && !atom.hetflag) {
+         atom.visible = true;
          if (currentChain != atom.chain || currentResi + 1 != atom.resi) {
             this.drawSmoothCurve(group, points, curveWidth, colors, div);
             points = [];
@@ -756,7 +765,7 @@ GLmol.prototype.drawMainchainCurve = function(group, atomlist, curveWidth, atomN
          currentResi = atom.resi;
       }
    }
-    this.drawSmoothCurve(group, points, curveWidth, colors, div);
+   this.drawSmoothCurve(group, points, curveWidth, colors, div);
 };
 
 GLmol.prototype.drawMainchainTube = function(group, atomlist, atomName, radius) {
@@ -767,6 +776,7 @@ GLmol.prototype.drawMainchainTube = function(group, atomlist, atomName, radius) 
       if (atom == undefined) continue;
 
       if ((atom.atom == atomName) && !atom.hetflag) {
+         atom.visible = true;
          if (currentChain != atom.chain || currentResi + 1 != atom.resi) {
             this.drawSmoothTube(group, points, colors, radii);
             points = []; colors = []; radii = [];
@@ -898,6 +908,7 @@ GLmol.prototype.drawHelixAsCylinder = function(group, atomlist, radius) {
       if ((atom.ss != 'h' && atom.ss != 's') || atom.ssend || atom.ssbegin) others.push(atom.serial);
       if (atom.ss == 's') beta.push(atom.serial);
       if (atom.atom != 'CA') continue;
+      atom.visible = true;
 
       if (atom.ss == 'h' && atom.ssend) {
          if (start != null) this.drawCylinder(group, new TV3(start.x, start.y, start.z), new TV3(atom.x, atom.y, atom.z), radius, atom.color, true);
@@ -932,6 +943,7 @@ GLmol.prototype.drawStrand = function(group, atomlist, num, div, fill, coilWidth
       if (atom == undefined) continue;
 
       if ((atom.atom == 'O' || atom.atom == 'CA') && !atom.hetflag) {
+         atom.visible = true;
          if (atom.atom == 'CA') {
             if (currentChain != atom.chain || currentResi + 1 != atom.resi) {
                for (var j = 0; !thickness && j < num; j++)
@@ -1005,6 +1017,7 @@ GLmol.prototype.drawNucleicAcidLadder = function(group, atomlist) {
    
    for (var i in atomlist) {
       var atom = this.atoms[atomlist[i]];
+      if (this.Nucleotides.indexOf(atom.resn) === -1) continue;
       if (atom == undefined || atom.hetflag) continue;
 
       if (atom.resi != currentResi || atom.chain != currentChain) {
@@ -1012,8 +1025,14 @@ GLmol.prototype.drawNucleicAcidLadder = function(group, atomlist) {
          currentComponent = new Array(baseAtoms.length);
       }
       var pos = baseAtoms.indexOf(atom.atom);
-      if (pos != -1) currentComponent[pos] = new TV3(atom.x, atom.y, atom.z);
-      if (atom.atom == 'O3\'') color = new TCo(atom.color);
+      if (pos != -1) {
+         currentComponent[pos] = new TV3(atom.x, atom.y, atom.z);
+         atom.visible = true;
+      }
+      if (atom.atom == 'O3\'') {
+         color = new TCo(atom.color);
+         atom.visible = true;
+      }
       currentResi = atom.resi; currentChain = atom.chain;
    }
    this.drawNucleicAcidLadderSub(geo, lineGeo, currentComponent, color);
@@ -1038,11 +1057,18 @@ GLmol.prototype.drawNucleicAcidStick = function(group, atomlist) {
                               new TV3(end.x, end.y, end.z), 0.3, start.color, true);
          start = null; end = null;
       }
-      if (atom.atom == 'O3\'') start = atom;
+      if (atom.atom == 'O3\'') {
+         start = atom;
+         atom.visible = true;
+      }
       if (atom.resn == '  A' || atom.resn == '  G' || atom.resn == ' DA' || atom.resn == ' DG') {
-         if (atom.atom == 'N1')  end = atom; //  N1(AG), N3(CTU)
+         if (atom.atom == 'N1') {
+            end = atom; //  N1(AG), N3(CTU)
+            atom.visible = true;
+         }
       } else if (atom.atom == 'N3') {
-         end = atom;
+         end = atom; 
+         atom.visible = true;
       }
       currentResi = atom.resi; currentChain = atom.chain;
    }
@@ -1068,11 +1094,18 @@ GLmol.prototype.drawNucleicAcidLine = function(group, atomlist) {
          }
          start = null; end = null;
       }
-      if (atom.atom == 'O3\'') start = atom;
+      if (atom.atom == 'O3\'') {
+         start = atom;
+         atom.visible = true;
+      }
       if (atom.resn == '  A' || atom.resn == '  G' || atom.resn == ' DA' || atom.resn == ' DG') {
-         if (atom.atom == 'N1')  end = atom; //  N1(AG), N3(CTU)
+         if (atom.atom == 'N1') {
+            end = atom; //  N1(AG), N3(CTU)
+            atom.visible = true;
+         }
       } else if (atom.atom == 'N3') {
-         end = atom;
+         end = atom; 
+         atom.visible = true;
       }
       currentResi = atom.resi; currentChain = atom.chain;
    }
@@ -1106,6 +1139,7 @@ GLmol.prototype.drawStrandNucleicAcid = function(group, atomlist, num, div, fill
       if (atom == undefined) continue;
 
       if ((atom.atom == 'O3\'' || atom.atom == 'OP2') && !atom.hetflag) {
+         atom.visible = true;
          if (atom.atom == 'O3\'') { // to connect 3' end. FIXME: better way to do?
             if (currentChain != atom.chain || currentResi + 1 != atom.resi) {               
                if (currentO3) {
@@ -1628,6 +1662,11 @@ GLmol.prototype.rebuildScene = function() {
 
    var view = this.getView();
    this.initializeScene();
+   for(var i=0,len=this.atoms.length;i<len;i++) {
+      atom = this.atoms[i];
+      if (atom == undefined) continue;
+      atom.visible = false;
+   };
    this.defineRepresentation();
    this.setView(view);
 
@@ -1742,7 +1781,7 @@ GLmol.prototype.enableMouse = function() {
       var nearest = [1, null, new TV3(0, 0, 1000)];
       for (var i = 0, ilim = me.atoms.length; i < ilim; i++) {
          var atom = me.atoms[i]; if (atom == undefined) continue;
-         if (atom.resn == "HOH") continue;
+         if (atom.resn == "HOH" || !atom.visible) continue;
 
          var v = new TV3(atom.x, atom.y, atom.z);
          v.applyProjection(pmvMat);
